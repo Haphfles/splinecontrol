@@ -54,11 +54,11 @@
         if (results.multiHandLandmarks.length > 0) {
           const landmarks = results.multiHandLandmarks[0];
           const rawX = (1 - landmarks[8].x) * 2 - 1; // Normalize between -1 and 1
-          const rawY = (landmarks[8].y * 2 - 1) * -1; // Normalize & flip
+          const rawY = (landmarks[8].y * 2 - 1) * -1; // Flip the vertical axis
 
           if (cube) {
             cube.rotation.y = rawX * Math.PI; // Rotate left/right
-            cube.rotation.x = rawY * Math.PI; // Rotate up/down
+            cube.rotation.x = rawY * Math.PI; // Flip the vertical axis
           }
         }
       });
