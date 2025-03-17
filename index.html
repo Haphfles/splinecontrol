@@ -56,7 +56,8 @@
 
       let lastX = window.innerWidth / 2;
       let lastY = window.innerHeight / 2;
-      const smoothingFactor = 0.5;
+      let lastScale = 1.0; // Added for scale smoothing
+      const smoothingFactor = 0.8; // Increased from 0.5 for smoother tracking
 
       hands.onResults((results) => {
         if (results.multiHandLandmarks.length > 0) {
@@ -70,9 +71,8 @@
           console.log("Hand position:", { x: lastX.toFixed(0), y: lastY.toFixed(0) });
 
           if (sphere) {
-            // Dynamic range based on screen size
-            const sceneWidth = window.innerWidth * 1.5;  // Multiplier for edge-to-edge
-            const sceneHeight = window.innerHeight * 1.5; // Match vertical range
+            const sceneWidth = window.innerWidth * 1.5;
+            const sceneHeight = window.innerHeight * 1.5;
             const posX = (lastX / window.innerWidth) * sceneWidth;
             const posY = (lastY / window.innerHeight) * sceneHeight;
 
@@ -85,7 +85,7 @@
               z: sphere.position.z.toFixed(0) 
             });
 
-            // Scale with index-thumb distance
+            // Scale with index-thumb distance, smoothed
             const indexX = landmarks[8].x;
             const indexY = landmarks[8].y;
             const thumbX = landmarks[4].x;
@@ -93,11 +93,12 @@
             const distance = Math.sqrt(
               Math.pow(indexX - thumbX, 2) + Math.pow(indexY - thumbY, 2)
             );
-            const scale = distance * 5;
-            sphere.scale.x = scale;
-            sphere.scale.y = scale;
-            sphere.scale.z = scale;
-            console.log("Sphere scale set:", scale.toFixed(2));
+            const rawScale = distance * 5;
+            lastScale = lastScale * smoothingFactor + rawScale * (1 - smoothingFactor);
+            sphere.scale.x = lastScale;
+            sphere.scale.y = lastScale;
+            sphere.scale.z = lastScale;
+            console.log("Sphere scale set:", lastScale.toFixed(2));
           }
         }
       });
