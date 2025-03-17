@@ -3,27 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hand-Controlled Spline Cube</title>
+  <title>Hand-Controlled Spline Scene</title>
 
   <!-- Load Spline Runtime -->
   <script type="module">
     import { Application } from 'https://unpkg.com/@splinetool/runtime@1.0.21/build/runtime.js';
 
     let splineApp;
-    let cube;
+    let sphere;
 
     async function initSpline() {
       const canvas = document.getElementById('spline-canvas');
       splineApp = new Application(canvas);
-      await splineApp.load('https://prod.spline.design/2vBaDURCsVLQC8gy/scene.splinecode'); // Updated link
+      await splineApp.load('https://prod.spline.design/2vBaDURCsVLQC8gy/scene.splinecode');
+      
+      sphere = splineApp.findObjectByName('Sphere');
+      console.log("Spline loaded, sphere found:", sphere ? "Yes" : "No, sphere is undefined");
 
-      cube = splineApp.findObjectByName('Cube'); // Ensure the cube is named "Cube" in Spline
-      console.log("Spline loaded, cube found:", cube);
+      const allObjects = splineApp.getAllObjects();
+      console.log("All objects in scene:", allObjects.map(obj => obj.name));
     }
 
     window.onload = async function () {
       await requestCameraPermissions();
-      initSpline();
+      await initSpline();
       initHandTracking();
     };
 
@@ -39,6 +42,7 @@
     }
 
     function initHandTracking() {
+      const canvas = document.getElementById('spline-canvas');
       const hands = new window.Hands({
         locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
       });
@@ -50,20 +54,38 @@
         minTrackingConfidence: 0.5
       });
 
+      let lastX = window.innerWidth / 2;
+      let lastY = window.innerHeight / 2;
+      const smoothingFactor = 0.5;
+
       hands.onResults((results) => {
         if (results.multiHandLandmarks.length > 0) {
           const landmarks = results.multiHandLandmarks[0];
-          const rawX = (1 - landmarks[8].x) * 2 - 1; // Normalize between -1 and 1
-          const rawY = (landmarks[8].y * 2 - 1) * -1; // Flip the vertical axis
+          const rawX = (1 - landmarks[8].x - 0.5) * window.innerWidth; // -width/2 to width/2
+          const rawY = (landmarks[8].y - 0.5) * window.innerHeight;     // -height/2 to height/2
 
-          if (cube) {
-            cube.rotation.y = rawX * Math.PI; // Rotate left/right
-            cube.rotation.x = rawY * Math.PI; // Flip the vertical axis
+          lastX = lastX * smoothingFactor + rawX * (1 - smoothingFactor);
+          lastY = lastY * smoothingFactor + rawY * (1 - smoothingFactor);
+
+          console.log("Hand position:", { x: lastX.toFixed(0), y: lastY.toFixed(0) });
+
+          if (sphere) {
+            const sceneWidth = 600;  // Wider range for horizontal
+            const sceneHeight = 600; // Taller range for vertical
+            const posX = (lastX / window.innerWidth) * sceneWidth;  // Left-right
+            const posY = (lastY / window.innerHeight) * sceneHeight; // Up-down
+
+            sphere.position.x = posX;
+            sphere.position.y = -posY; // Flip Y-axis
+            console.log("Sphere position set:", { 
+              x: sphere.position.x.toFixed(0), 
+              y: sphere.position.y.toFixed(0), 
+              z: sphere.position.z.toFixed(0) 
+            });
           }
         }
       });
 
-      // Start the camera
       const video = document.getElementById('video');
       const camera = new window.Camera(video, {
         onFrame: async () => {
@@ -73,7 +95,27 @@
         height: 240
       });
 
-      camera.start().then(() => console.log("Camera started")).catch((err) => console.error("Camera failed:", err));
+      camera.start()
+        .then(() => console.log("Camera started"))
+        .catch((err) => console.error("Camera failed:", err));
+
+      // Mouse control for testing
+      canvas.addEventListener('mousemove', (e) => {
+        console.log("Real mouse moved:", { x: e.clientX, y: e.clientY });
+        if (sphere) {
+          const sceneWidth = 600;
+          const sceneHeight = 600;
+          const posX = (e.clientX / window.innerWidth) * sceneWidth;
+          const posY = (e.clientY / window.innerHeight) * sceneHeight;
+          sphere.position.x = posX;
+          sphere.position.y = -posY;
+          console.log("Mouse set sphere position:", { 
+            x: sphere.position.x.toFixed(0), 
+            y: sphere.position.y.toFixed(0), 
+            z: sphere.position.z.toFixed(0) 
+          });
+        }
+      });
     }
   </script>
 
@@ -89,7 +131,12 @@
       display: block;
     }
     #video {
-      display: none; /* Hide camera view */
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 320px;
+      height: 240px;
+      border: 1px solid red;
     }
   </style>
 </head>
