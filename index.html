@@ -70,20 +70,22 @@
           console.log("Hand position:", { x: lastX.toFixed(0), y: lastY.toFixed(0) });
 
           if (sphere) {
-            const sceneWidth = 800;
-            const sceneHeight = 800;
+            // Dynamic range based on screen size
+            const sceneWidth = window.innerWidth * 1.5;  // Multiplier for edge-to-edge
+            const sceneHeight = window.innerHeight * 1.5; // Match vertical range
             const posX = (lastX / window.innerWidth) * sceneWidth;
             const posY = (lastY / window.innerHeight) * sceneHeight;
 
-            sphere.position.x = posX;
-            sphere.position.y = -posY;
+            sphere.position.z = -posX; // Flipped horizontal
+            sphere.position.y = -posY; // Vertical
+            sphere.position.x = 0;     // Reset X
             console.log("Sphere position set:", { 
               x: sphere.position.x.toFixed(0), 
               y: sphere.position.y.toFixed(0), 
               z: sphere.position.z.toFixed(0) 
             });
 
-            // Scale based on index-thumb distance
+            // Scale with index-thumb distance
             const indexX = landmarks[8].x;
             const indexY = landmarks[8].y;
             const thumbX = landmarks[4].x;
@@ -91,7 +93,7 @@
             const distance = Math.sqrt(
               Math.pow(indexX - thumbX, 2) + Math.pow(indexY - thumbY, 2)
             );
-            const scale = distance * 5; // Scale factor (adjust as needed)
+            const scale = distance * 5;
             sphere.scale.x = scale;
             sphere.scale.y = scale;
             sphere.scale.z = scale;
@@ -113,16 +115,17 @@
         .then(() => console.log("Camera started"))
         .catch((err) => console.error("Camera failed:", err));
 
-      // Mouse control for testing
+      // Mouse control for comparison
       canvas.addEventListener('mousemove', (e) => {
         console.log("Real mouse moved:", { x: e.clientX, y: e.clientY });
         if (sphere) {
-          const sceneWidth = 800;
-          const sceneHeight = 800;
+          const sceneWidth = window.innerWidth * 1.5;
+          const sceneHeight = window.innerHeight * 1.5;
           const posX = (e.clientX / window.innerWidth) * sceneWidth;
           const posY = (e.clientY / window.innerHeight) * sceneHeight;
-          sphere.position.x = posX;
+          sphere.position.z = -posX;
           sphere.position.y = -posY;
+          sphere.position.x = 0;
           console.log("Mouse set sphere position:", { 
             x: sphere.position.x.toFixed(0), 
             y: sphere.position.y.toFixed(0), 
@@ -145,7 +148,7 @@
       display: block;
     }
     #video {
-      display: none; /* Hide camera feed */
+      display: none;
     }
   </style>
 </head>
